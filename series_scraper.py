@@ -176,14 +176,82 @@ if __name__ == "__main__":
     print("   • series.m3u")
     print("   • movies.m3u")
     print("   • unknown.m3u")
-    # ---------------- EXPORT TO M3U ----------------
+# ================= EXPORT FUNCTION =================
 def export_m3u(data, filename):
     with open(filename, "w", encoding="utf-8") as f:
         f.write("#EXTM3U\n")
         for item in data:
-            title = item["title"]
-            url = item["url"]
-            f.write(f"#EXTINF:-1,{title}\n{url}\n")
+            f.write(f"#EXTINF:-1,{item['title']}\n{item['url']}\n")
 
-# save working streams as IPTV playlist
-export_m3u(all_streams, "playlist.m3u")
+
+# ================= MAIN EXPORT (REPLACE END SECTION) =================
+
+print(f"\nWorking streams: {len(working)}")
+
+# GROUP ONLY WORKING STREAMS
+grouped = {"series": {}, "movies": {}, "unknown": []}
+
+for s in working:
+    if s["type"] == "series":
+        grouped["series"].setdefault(s["clean"], {}).setdefault(s["season"], []).append(s)
+    elif s["type"] == "movie":
+        grouped["movies"].setdefault(s["clean"], []).append(s)
+    else:
+        grouped["unknown"].append(s)
+
+# OUTPUT FOLDER
+folder = f"IPTV_Output_{datetime.now().strftime('%Y%m%d_%H%M')}"
+os.makedirs(folder, exist_ok=True)
+
+# ================= SERIES =================
+series_list = []
+with open(f"{folder}/series.m3u", "w", encoding="utf-8") as f:
+    f.write("#EXTM3U\n")
+    for show, seasons in grouped["series"].items():
+        for season in sorted(seasons.keys()):
+            eps = seasons[season]
+            eps.sort(key=lambda x: (x["episode"] or 0))
+
+            for e in eps:
+                label = f"{show} S{season or 0:02d}E{e['episode'] or 0:02d}"
+                f.write(f"#EXTINF:-1,{label}\n{e['url']}\n")
+
+                series_list.append({
+                    "title": label,
+                    "url": e["url"]
+                })
+
+# ================= MOVIES =================
+movies_list = []
+with open(f"{folder}/movies.m3u", "w", encoding="utf-8") as f:
+    f.write("#EXTM3U\n")
+    for name, items in grouped["movies"].items():
+        for i in items:
+            f.write(f"#EXTINF:-1,{name}\n{i['url']}\n")
+
+            movies_list.append({
+                "title": name,
+                "url": i["url"]
+            })
+
+# ================= UNKNOWN =================
+unknown_list = []
+with open(f"{folder}/unknown.m3u", "w", encoding="utf-8") as f:
+    f.write("#EXTM3U\n")
+    for i in grouped["unknown"]:
+        f.write(f"#EXTINF:-1,{i['title']}\n{i['url']}\n")
+
+        unknown_list.append({
+            "title": i["title"],
+            "url": i["url"]
+        })
+
+# ================= FULL CLEAN PLAYLIST (THIS IS WHAT YOU USE IN SMARTERS) =================
+all_working_clean = series_list + movies_list + unknown_list
+export_m3u(all_working_clean, f"{folder}/playlist.m3u")
+
+print(f"\n✅ Done. Files saved in: {folder}")
+print("   • series.m3u")
+print("   • movies.m3u")
+print("   • unknown.m3u")
+print("   • playlist.m3u  ← USE THIS IN IPTV SMARTERS")
