@@ -1,0 +1,112 @@
+[
+    {
+        "title": "AVA Series",
+        "url": "https://avaserieshls.wns.live/hls/stream.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "GEM Series Plus",
+        "url": "https://ca-rt.onetv.app/gemseriesplus/index-0.m3u8?token=onetv202",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "GEM Series",
+        "url": "https://ca-rt.onetv.app/gemseries/index-0.m3u8?token=onetv202",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "2x2 (576i)",
+        "url": "https://bl.rutube.ru/livestream/392b4686b770bae2da6bf5ac4574add5/index.m3u8?s=tenr-yHXUv1wibfka78s2A&e=2068731801&scheme=https",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "Big TV 24x7 (576i)",
+        "url": "https://d2gvyg6lvauoko.cloudfront.net/230226/bigtvmalyalam/chunks.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "JK 24x7 News (720p) [Not 24/7]",
+        "url": "https://live.gulistannews.in/hls/jk.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "HNN 24x7 (576p)",
+        "url": "https://ott.livelegitpro.in:9899/hnnnews/hnnnews/tracks-v1/index.fmp4.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "INH 24x7 (576p)",
+        "url": "https://mumt01.tangotv.in/INH24X7/index.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "News Malayalam 24x7 (1080p)",
+        "url": "https://d18a8tqmogafg2.cloudfront.net/newsmalayalam/index.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "News Tamil 24x7 (1080p)",
+        "url": "https://d18a8tqmogafg2.cloudfront.net/newstamil/index.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "NDTV 24X7 (480p) [Not 24/7]",
+        "url": "https://ndtv24x7elemarchana.akamaized.net/hls/live/2003678/ndtv24x7/master.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "Mundo Series (1080p)",
+        "url": "https://streams2.sofast.tv/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/e3189902-0967-48a7-9d32-9401e34471c6/manifest.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "Persiana Series",
+        "url": "https://onehls.persiana.live/hls/stream.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "Samachar Plus 24x7 (576p)",
+        "url": "https://mumt05.tangotv.in/VERTENTSAMACHARPLUS/index.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "Series K Legacy (1080p)",
+        "url": "https://d2uvezlpjwbhrx.cloudfront.net/playlist.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "Series K Heart (1080p)",
+        "url": "https://d28efmnqar6ea8.cloudfront.net/playlist.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "Space Series (1080p)",
+        "url": "https://streams2.sofast.tv/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/18d329ef-d478-413c-b68f-c123494ac434/manifest.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "Series K Edge (1080p)",
+        "url": "https://d3mznj2vub522l.cloudfront.net/playlist.m3u8",
+        "source": "https://iptv-org.github.io/iptv/index.m3u"
+    },
+    {
+        "title": "AVA Series",
+        "url": "https://avaserieshls.wns.live/hls/stream.m3u8",
+        "source": "https://iptv-org.github.io/iptv/categories/series.m3u"
+    },
+    {
+        "title": "Persiana Series",
+        "url": "https://onehls.persiana.live/hls/stream.m3u8",
+        "source": "https://iptv-org.github.io/iptv/categories/series.m3u"
+    },
+    {
+        "title": "GEM Series",
+        "url": "https://ca-rt.onetv.app/gemseries/index-0.m3u8?token=onetv202",
+        "source": "https://iptv-org.github.io/iptv/categories/series.m3u"
+    },
+    {
+        "title": "GEM Series Plus",
+        "url": "https://ca-rt.onetv.app/gemseriesplus/index-0.m3u8?token=onetv202",
+        "source": "https://iptv-org.github.io/iptv/categories/series.m3u"
+    }
+]

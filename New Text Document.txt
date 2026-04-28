@@ -1,0 +1,133 @@
+import requests
+import re
+import os
+import json
+from datetime import datetime
+from tqdm import tqdm
+import concurrent.futures
+
+print("=== Series / VOD IPTV Scraper with Stream Testing ===\n")
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+}
+
+# Public sources
+urls_to_scrape = [
+    "https://iptv-org.github.io/iptv/index.m3u",
+    "https://iptv-org.github.io/iptv/categories/series.m3u",
+    "https://iptv-org.github.io/iptv/categories/movies.m3u",
+    "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8",
+    "https://raw.githubusercontent.com/jromero88/iptv/master/VOD.m3u",
+]
+
+def is_series_or_vod(title: str) -> bool:
+    if not title:
+        return False
+    text = title.lower()
+    patterns = [r's\d{1,2}e\d{1,2}', r'season \d+', r'episode \d+', r'\d+x\d{1,2}', r'vod', r'series', r'tv show']
+    return any(re.search(p, text) for p in patterns)
+
+def test_stream(url, timeout=8):
+    """Quick test if stream is alive"""
+    try:
+        r = requests.head(url, headers=HEADERS, timeout=timeout, allow_redirects=True)
+        return r.status_code in (200, 206, 302, 301)
+    except:
+        return False
+
+def download_and_parse_m3u(url):
+    streams = []
+    try:
+        print(f"[+] Downloading: {url}")
+        r = requests.get(url, headers=HEADERS, timeout=20)
+        r.raise_for_status()
+        
+        lines = r.text.splitlines()
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            if line.startswith("#EXTINF:"):
+                title_match = re.search(r',(.+)', line)
+                title = title_match.group(1).strip() if title_match else "Unknown"
+
+                if i + 1 < len(lines):
+                    stream_url = lines[i + 1].strip()
+                    if stream_url and not stream_url.startswith("#") and is_series_or_vod(title):
+                        streams.append({
+                            "title": title,
+                            "url": stream_url,
+                            "source": url
+                        })
+            i += 1
+    except Exception as e:
+        print(f"[-] Failed to download {url}: {e}")
+    return streams
+
+# ====================== MAIN ======================
+if __name__ == "__main__":
+    all_streams = []
+
+    print("Step 1: Collecting series/VOD from public playlists...\n")
+    for url in urls_to_scrape:
+        streams = download_and_parse_m3u(url)
+        all_streams.extend(streams)
+
+    print(f"\nFound {len(all_streams)} potential series/VOD streams.")
+
+    # === Stream Testing ===
+    print("\nStep 2: Testing streams (this may take some time)...")
+    working_streams = []
+    dead_streams = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        future_to_stream = {executor.submit(test_stream, s["url"]): s for s in all_streams}
+        
+        for future in tqdm(concurrent.futures.as_completed(future_to_stream), total=len(all_streams), desc="Testing"):
+            stream = future_to_stream[future]
+            try:
+                is_working = future.result()
+                if is_working:
+                    working_streams.append(stream)
+                else:
+                    dead_streams.append(stream)
+            except:
+                dead_streams.append(stream)
+
+    print(f"\n✅ Testing completed!")
+    print(f"   Working streams : {len(working_streams)}")
+    print(f"   Dead / Timeout  : {len(dead_streams)}")
+
+    # Save results
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    folder = f"Tested_Series_VOD_{timestamp}"
+    os.makedirs(folder, exist_ok=True)
+
+    # Save working streams
+    with open(f"{folder}/WORKING_series_vod.txt", "w", encoding="utf-8") as f:
+        for item in working_streams:
+            f.write(f"{item['title']} | {item['url']}\n")
+
+    with open(f"{folder}/WORKING_series_vod.json", "w", encoding="utf-8") as f:
+        json.dump(working_streams, f, indent=4, ensure_ascii=False)
+
+    # Save summary
+    with open(f"{folder}/SUMMARY.txt", "w", encoding="utf-8") as f:
+        f.write(f"Series/VOD Scraper Report - {datetime.now()}\n")
+        f.write(f"Total found    : {len(all_streams)}\n")
+        f.write(f"Working streams: {len(working_streams)}\n")
+        f.write(f"Dead streams   : {len(dead_streams)}\n")
+
+    print(f"\nResults saved in folder: **{folder}**")
+    print("   • WORKING_series_vod.txt     ← Best file to use")
+    print("   • WORKING_series_vod.json")
+    print("   • SUMMARY.txt")
+
+    # Preview working streams
+    if working_streams:
+        print("\n=== First 10 WORKING Streams ===")
+        for i, item in enumerate(working_streams[:10], 1):
+            print(f"{i:2d}. {item['title']}")
+    else:
+        print("\nNo working streams found. Public lists are often unstable.")
