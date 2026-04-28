@@ -5,7 +5,7 @@ from datetime import datetime
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-print("=== FAST IPTV SERIES / VOD SCRAPER ===\n")
+print("=== ULTRA FAST IPTV SCRAPER ===\n")
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
@@ -14,6 +14,9 @@ URLS = [
     "https://iptv-org.github.io/iptv/categories/series.m3u",
     "https://iptv-org.github.io/iptv/categories/movies.m3u",
 ]
+
+TIMEOUT = 3
+MAX_THREADS = 120   # faster but still stable
 
 # ---------------- CLEAN ----------------
 def clean_title(t):
@@ -27,14 +30,13 @@ def clean_title(t):
 def classify(t):
     low = t.lower()
 
-    if re.search(r's\d{1,2}e\d{1,2}', low) or re.search(r'\d{1,2}x\d{1,2}', low):
-        m = re.search(r's(\d{1,2})e(\d{1,2})|(\d{1,2})x(\d{1,2})', low)
-        if m:
-            s = m.group(1) or m.group(3)
-            e = m.group(2) or m.group(4)
-            return "series", int(s), int(e), clean_title(t)
+    match = re.search(r's(\d{1,2})e(\d{1,2})|(\d{1,2})x(\d{1,2})', low)
+    if match:
+        s = match.group(1) or match.group(3)
+        e = match.group(2) or match.group(4)
+        return "series", int(s), int(e), clean_title(t)
 
-    if any(x in low for x in ["movie", "1080p", "720p", "bluray"]):
+    if any(x in low for x in ["movie", "1080p", "720p", "bluray", "webrip"]):
         return "movie", None, None, clean_title(t)
 
     return "unknown", None, None, clean_title(t)
@@ -42,45 +44,50 @@ def classify(t):
 # ---------------- PARSE ----------------
 def parse(url):
     try:
-        r = requests.get(url, headers=HEADERS, timeout=15)
+        r = requests.get(url, headers=HEADERS, timeout=10)
         lines = r.text.splitlines()
+
         out = []
 
         for i in range(len(lines)):
             if lines[i].startswith("#EXTINF"):
                 title = lines[i].split(",", 1)[-1]
+
                 if i + 1 < len(lines):
                     link = lines[i + 1].strip()
+
                     if link.startswith("http"):
                         t, s, e, clean = classify(title)
                         out.append((title, clean, link, t, s, e))
+
         return out
+
     except:
         return []
 
-# ---------------- FAST STREAM CHECK (NO DOWNLOAD) ----------------
+# ---------------- FAST CHECK ----------------
 def alive(url):
     try:
-        r = requests.head(url, headers=HEADERS, timeout=4, allow_redirects=True)
-        if r.status_code in [200, 206]:
-            return True
-    except:
-        pass
+        r = requests.head(url, headers=HEADERS, timeout=TIMEOUT, allow_redirects=True)
 
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=4, stream=True)
-        return r.status_code in [200, 206]
+        if r.status_code in (200, 206):
+            return True
+
+        # fallback for servers blocking HEAD
+        r = requests.get(url, headers=HEADERS, timeout=TIMEOUT, stream=True)
+        return r.status_code in (200, 206)
+
     except:
         return False
 
 # ---------------- MAIN ----------------
 all_streams = []
 
-print("Scraping...")
+print("Scraping sources...")
 for u in URLS:
     all_streams += parse(u)
 
-# dedupe early
+# dedupe
 seen = set()
 unique = []
 for s in all_streams:
@@ -90,21 +97,21 @@ for s in all_streams:
 
 print(f"Total streams: {len(unique)}")
 
-print("\nTesting (FAST MODE)...")
+print("\nTesting streams (FAST MODE)...")
+
 working = []
+with ThreadPoolExecutor(max_workers=MAX_THREADS) as ex:
+    futures = {ex.submit(alive, s[2]): s for s in unique}
 
-with ThreadPoolExecutor(max_workers=80) as ex:
-    fut = {ex.submit(alive, s[2]): s for s in unique}
-
-    for f in tqdm(as_completed(fut), total=len(fut)):
-        s = fut[f]
+    for f in tqdm(as_completed(futures), total=len(futures)):
+        s = futures[f]
         try:
             if f.result():
                 working.append(s)
         except:
             pass
 
-print(f"Working: {len(working)}")
+print(f"\nWorking streams: {len(working)}")
 
 # ---------------- GROUP ----------------
 series, movies, unknown = [], [], []
@@ -118,10 +125,10 @@ for t, clean, url, typ, s, e in working:
         unknown.append((t, url))
 
 # ---------------- OUTPUT ----------------
-folder = f"IPTV_CLEAN_{datetime.now().strftime('%Y%m%d_%H%M')}"
+folder = "combined-playlist"
 os.makedirs(folder, exist_ok=True)
 
-def write_m3u(path, items, mode):
+def write(path, items, mode):
     with open(path, "w", encoding="utf-8") as f:
         f.write("#EXTM3U\n")
 
@@ -138,22 +145,22 @@ def write_m3u(path, items, mode):
             for t, u in items:
                 f.write(f"#EXTINF:-1,{t}\n{u}\n")
 
-write_m3u(f"{folder}/series.m3u", series, "series")
-write_m3u(f"{folder}/movies.m3u", movies, "movies")
-write_m3u(f"{folder}/unknown.m3u", unknown, "unknown")
+write(f"{folder}/series.m3u", series, "series")
+write(f"{folder}/movies.m3u", movies, "movies")
+write(f"{folder}/unknown.m3u", unknown, "unknown")
 
-# SMARTERS MASTER LIST
-with open(f"{folder}/playlist.m3u", "w", encoding="utf-8") as f:
+# MASTER PLAYLIST (Smarters)
+with open(f"{folder}/combined-playlist.m3u", "w", encoding="utf-8") as f:
     f.write("#EXTM3U\n")
+
     for c, s, e, u in series:
         f.write(f"#EXTINF:-1,{c}\n{u}\n")
+
     for c, u in movies:
         f.write(f"#EXTINF:-1,{c}\n{u}\n")
+
     for t, u in unknown:
         f.write(f"#EXTINF:-1,{t}\n{u}\n")
 
-print("\nDONE")
-print("✔ series.m3u")
-print("✔ movies.m3u")
-print("✔ unknown.m3u")
-print("✔ playlist.m3u (use in Smarters)")
+print("\nDONE ✔")
+print("✔ combined-playlist.m3u (USE THIS IN SMARTERS)")
