@@ -176,3 +176,14 @@ if __name__ == "__main__":
     print("   • series.m3u")
     print("   • movies.m3u")
     print("   • unknown.m3u")
+    # ---------------- EXPORT TO M3U ----------------
+def export_m3u(data, filename):
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("#EXTM3U\n")
+        for item in data:
+            title = item["title"]
+            url = item["url"]
+            f.write(f"#EXTINF:-1,{title}\n{url}\n")
+
+# save working streams as IPTV playlist
+export_m3u(all_streams, "playlist.m3u")
