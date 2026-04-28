@@ -2,42 +2,41 @@
 cd /d %~dp0
 
 echo ==============================
-echo   IPTV FULL AUTO PIPELINE
+echo  IPTV CLEAN BUILD + DEPLOY
 echo ==============================
 
 :: STEP 1 - RUN SCRAPER
-echo Running scraper...
 python scraper.py
 
-:: STEP 2 - CREATE CLEAN FOLDERS
-echo Organising files...
+:: STEP 2 - FORCE CLEAN OUTPUT FILE LOCATION
+echo Cleaning old files...
 
-if not exist output mkdir output
-if not exist output\series mkdir output\series
-if not exist output\movies mkdir output\movies
-if not exist output\unknown mkdir output\unknown
+if exist combined-playlist.m3u del /f /q combined-playlist.m3u
 
-:: STEP 3 - MOVE FILES
-move /Y series.m3u output\series\series.m3u >nul 2>&1
-move /Y movies.m3u output\movies\movies.m3u >nul 2>&1
-move /Y unknown.m3u output\unknown\unknown.m3u >nul 2>&1
-move /Y playlist.m3u output\playlist.m3u >nul 2>&1
-
-:: STEP 4 - GIT PUSH
-echo.
-echo Pushing to GitHub...
-
-git add .
-
-for /f "tokens=1-3 delims=/:. " %%a in ("%date% %time%") do (
-    set msg=auto update %%a-%%b-%%c
+:: Find newest playlist inside folders and move it to root
+for /r %%f in (playlist.m3u) do (
+    copy /Y "%%f" combined-playlist.m3u >nul
 )
 
-git commit -m "%msg%"
+for /r %%f in (series.m3u) do (
+    copy /Y "%%f" series.m3u >nul
+)
+
+for /r %%f in (movies.m3u) do (
+    copy /Y "%%f" movies.m3u >nul
+)
+
+:: STEP 3 - GIT CLEAN TRACKING
+git add .
+
+git commit -m "auto update playlist"
+
+git pull origin main --rebase
+
 git push origin main
 
 echo.
 echo ==============================
-echo   DONE - ALL UPDATED
+echo DONE - FIXED FOR RAW LINK
 echo ==============================
 pause
